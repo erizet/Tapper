@@ -39,6 +39,26 @@ internal class DefaultMessageTypeTranslator : ITypeTranslator
             codeWriter.Append($"{indent}{name}{(isNullable ? "?" : string.Empty)}: {TypeMapper.MapTo(memberTypeSymbol, options)};{newLineString}");
         }
 
+        var methods = typeSymbol.GetPublicMemberFunctions()
+            .ToArray();
+
+        foreach (var method in methods)
+        {
+            var (returnTypeSymbol, isNullable) = MessageTypeTranslatorHelper.GetMemberTypeSymbol(method, options);
+
+            var (isValid, name) = MessageTypeTranslatorHelper.GetMemberName(method, options);
+
+            if (!isValid)
+            {
+                continue;
+            }
+
+            // Add jsdoc comment
+            codeWriter.Append($"{indent}/** Transpiled from {method.ToDisplayString()} */{newLineString}");
+            codeWriter.Append($"{indent}{name}{(isNullable ? "?" : string.Empty)}({GetFunctionParameters(method, options)}): {TypeMapper.MapTo(returnTypeSymbol, options)};{newLineString}");
+        }
+
+
         codeWriter.Append('}');
 
         if (MessageTypeTranslatorHelper.IsSourceType(typeSymbol.BaseType, options))
@@ -47,6 +67,29 @@ internal class DefaultMessageTypeTranslator : ITypeTranslator
         }
 
         codeWriter.Append(newLineString);
+    }
+
+    protected string GetFunctionParameters(IMethodSymbol methodSymbol, ITranspilationOptions options)
+    {
+        var parameters = methodSymbol.Parameters
+            .Select(x => GetParameter(x, options))
+            .ToArray();
+
+        return string.Join(", ", parameters);
+    }
+
+    protected string GetParameter(IParameterSymbol parameterSymbol, ITranspilationOptions options)
+    {
+        var (isValid, name) = MessageTypeTranslatorHelper.GetMemberName(parameterSymbol, options);
+
+        if (!isValid)
+        {
+            return string.Empty;
+        }
+
+        var isNullable = parameterSymbol.NullableAnnotation == NullableAnnotation.Annotated;
+
+        return $"{name}{(isNullable ? "?" : string.Empty)}: {TypeMapper.MapTo(parameterSymbol.Type, options)}";
     }
 }
 
@@ -104,8 +147,33 @@ file static class MessageTypeTranslatorHelper
             var isNullable = fieldSymbol.NullableAnnotation is not NullableAnnotation.NotAnnotated;
             return (typeSymbol, isNullable);
         }
+        else if (symbol is IMethodSymbol methodSymbol)
+        {
+            var typeSymbol = methodSymbol.ReturnType;
 
-        throw new UnreachableException($"{nameof(symbol)} must be IPropertySymbol or IFieldSymbol");
+            if (typeSymbol.IsValueType)
+            {
+                if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
+                {
+                    if (!namedTypeSymbol.IsGenericType)
+                    {
+                        return (typeSymbol, false);
+                    }
+
+                    if (namedTypeSymbol.ConstructedFrom.SpecialType == SpecialType.System_Nullable_T)
+                    {
+                        return (namedTypeSymbol.TypeArguments[0], true);
+                    }
+
+                    return (typeSymbol, false);
+                }
+            }
+
+            var isNullable = methodSymbol.ReturnNullableAnnotation is not NullableAnnotation.NotAnnotated;
+            return (typeSymbol, isNullable);
+        }
+
+        throw new UnreachableException($"{nameof(symbol)} must be IPropertySymbol, IFieldSymbol or IMethodSymbol.");
     }
 
     public static bool IsSourceType([NotNullWhen(true)] INamedTypeSymbol? typeSymbol, ITranspilationOptions options)

@@ -39,3 +39,12 @@ public class AttributeAnnotatedClass4
     public int Value { get; }
     public required string Name { get; init; }
 }
+
+[TranspilationSource]
+public class AttributeAnnotatedClassWithFunction
+{
+    public int Add(int x, int y)
+    {
+        return x + y;
+    }
+}

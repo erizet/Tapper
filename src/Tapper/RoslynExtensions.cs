@@ -25,6 +25,29 @@ public static partial class RoslynExtensions
             });
     }
 
+    public static IEnumerable<IMethodSymbol> GetPublicMemberFunctions(this INamedTypeSymbol source)
+    {
+        return source.GetMembers()
+            .Where(static x =>
+            {
+                if (x.DeclaredAccessibility is not Accessibility.Public)
+                {
+                    return false;
+                }
+
+                if (x is IMethodSymbol methodSymbol)
+                {
+                    if(methodSymbol.MethodKind is MethodKind.Ordinary)
+                    {
+                        return !methodSymbol.IsStatic;
+                    }
+                }
+
+                return false;
+            })
+            .Select(static x => (IMethodSymbol)x);
+    }
+
     public static IEnumerable<ISymbol> IgnoreStatic(this IEnumerable<ISymbol> source)
     {
         return source
