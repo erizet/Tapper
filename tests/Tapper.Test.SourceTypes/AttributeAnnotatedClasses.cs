@@ -40,11 +40,3 @@ public class AttributeAnnotatedClass4
     public required string Name { get; init; }
 }
 
-[TranspilationSource]
-public class AttributeAnnotatedClassWithFunction
-{
-    public int Add(int x, int y)
-    {
-        return x + y;
-    }
-}

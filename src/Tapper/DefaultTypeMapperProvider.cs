@@ -21,6 +21,7 @@ public class DefaultTypeMapperProvider : ITypeMapperProvider
         var dateTimeTypeMapper = new DateTimeTypeMapper(compilation);
         var dateTimeOffsetTypeMapper = new DateTimeOffsetTypeMapper(compilation);
         var nullableStructTypeMapper = new NullableStructTypeMapper(compilation);
+        var taskTypeMapper = new TaskTypeMapper(compilation);
 
         var primitiveTypeMappers = PrimitiveTypeMappers.Create(compilation);
         var collectionTypeTypeMappers = CollectionTypeTypeMappers.Create(compilation);
@@ -32,7 +33,7 @@ public class DefaultTypeMapperProvider : ITypeMapperProvider
         var typeMappers = sourceTypeMapper.Concat(primitiveTypeMappers)
             .Concat(collectionTypeTypeMappers)
             .Concat(dictionaryTypeMappers)
-            .Concat(new ITypeMapper[] { dateTimeTypeMapper, dateTimeOffsetTypeMapper, nullableStructTypeMapper });
+            .Concat(new ITypeMapper[] { dateTimeTypeMapper, dateTimeOffsetTypeMapper, nullableStructTypeMapper, taskTypeMapper });
 
         _mappers = typeMappers.ToDictionary<ITypeMapper, ITypeSymbol>(x => x.Assign, SymbolEqualityComparer.Default);
     }

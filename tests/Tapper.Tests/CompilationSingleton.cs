@@ -56,6 +56,10 @@ public class CompilationSingleton
             File.ReadAllText("../../../../Tapper.Test.SourceTypes/MessagePackAttributes.cs"),
             options);
 
+        var methodSyntax = CSharpSyntaxTree.ParseText(
+            File.ReadAllText("../../../../Tapper.Test.SourceTypes/ClassesWithMethods.cs"),
+            options);
+
         var compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
             .WithNullableContextOptions(NullableContextOptions.Enable);
 
@@ -82,6 +86,7 @@ public class CompilationSingleton
                 inheritanceSyntax,
                 attributeAnnotatedSyntax,
                 messagePackAttributesSyntax,
+                methodSyntax
             },
             references: references,
             options: compilationOptions);
